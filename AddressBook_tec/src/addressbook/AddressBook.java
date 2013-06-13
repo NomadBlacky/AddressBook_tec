@@ -180,7 +180,7 @@ public class AddressBook extends JFrame implements MouseListener {
 						return;
 					}
 				}
-
+				
 				try {
 					// テーブルの内容を書き込む
 					FileWriter fw = new FileWriter(file);

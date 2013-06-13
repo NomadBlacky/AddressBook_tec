@@ -7,10 +7,12 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 
+import javax.rmi.CORBA.Tie;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -92,6 +94,10 @@ public class EditFrame extends JFrame {
 		hogePanel.setBorder(null);
 		getContentPane().add(hogePanel, BorderLayout.NORTH);
 
+		// ショートカットキー用のリスナーを追加
+		this.setFocusable(true);
+		this.addKeyListener(new ShortcutKey());
+		
 		// 初期化処理
 		init();
 
@@ -105,7 +111,6 @@ public class EditFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 
 			saveData();
-			textEdited = false;
 		}
 		
 	}
@@ -116,7 +121,6 @@ public class EditFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 
 			prevData();
-			textEdited = false;
 		}
 	}
 
@@ -126,7 +130,6 @@ public class EditFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 
 			nextData();
-			textEdited = false;
 		}
 	}
 
@@ -136,7 +139,6 @@ public class EditFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 
 			newData();
-			textEdited = false;
 		}
 	}
 
@@ -146,11 +148,57 @@ public class EditFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 
 			deleteData();
-			textEdited = false;
 		}
 	}
 
 // KeyListener ---------------------------------------------
+	
+	/** ショートカットキー */
+	class ShortcutKey implements KeyListener {
+
+		@Override
+		public void keyPressed(KeyEvent e) {
+			
+			// Ctrlキーを押していないなら抜ける
+			if(!e.isControlDown()) {
+				return;
+			}
+		
+			switch (e.getKeyCode()) {
+			case KeyEvent.VK_S:
+				saveData();
+				break;
+				
+			case KeyEvent.VK_B:
+				prevData();
+				break;
+				
+			case KeyEvent.VK_N:
+				nextData();
+				break;
+				
+			case KeyEvent.VK_E:
+				newData();
+				break;
+				
+			case KeyEvent.VK_D:
+				deleteData();
+				
+			case KeyEvent.VK_X:
+				setVisible(false);
+
+			default:
+				break;
+			}
+		}
+	
+		@Override
+		public void keyReleased(KeyEvent e) {}
+	
+		@Override
+		public void keyTyped(KeyEvent e) {}
+		
+	}
 
 	class TextEditing implements KeyListener {
 
@@ -194,8 +242,10 @@ public class EditFrame extends JFrame {
 			mainPanel.add(label, labelGbc);
 
 			JTextField textField = new JTextField((String)model.getValueAt(nowDataRow, i));
-			// テキストが編集時のリスナーを追加
+			// テキストが編集されたか監視する
 			textField.addKeyListener(new TextEditing());
+			// ショートカットキーを追加
+			textField.addKeyListener(new ShortcutKey());
 			textFields.add(textField);
 			GridBagConstraints textGbc = new GridBagConstraints();
 			textGbc.ipady = 2;
@@ -211,6 +261,7 @@ public class EditFrame extends JFrame {
 	}
 
 	/** 編集されたデータを更新したのち、指定した行のデータを表示する。 */
+	@SuppressWarnings("unused")
 	private boolean update(int showRow) {
 
 		if(showRow < 0 || showRow >= model.getRowCount()) {
@@ -232,6 +283,8 @@ public class EditFrame extends JFrame {
 
 		// 表示が完了したら現在のインデックスを更新
 		nowDataRow = showRow;
+		
+		textEdited = false;
 
 		return true;
 	}
@@ -252,6 +305,9 @@ public class EditFrame extends JFrame {
 
 		// 現在のインデックスを更新
 		nowDataRow = showRow;
+		
+		textEdited = false;
+		
 		return true;
 	}
 
@@ -267,6 +323,8 @@ public class EditFrame extends JFrame {
 		for (JTextField text : textFields) {
 			text.setEditable(true);
 		}
+		
+		textEdited = false;
 
 	}
 
@@ -277,6 +335,8 @@ public class EditFrame extends JFrame {
 			String text = textFields.get(i).getText();
 			model.setValueAt(text, nowDataRow, i);
 		}
+		
+		textEdited = false;
 
 	}
 
@@ -312,7 +372,7 @@ public class EditFrame extends JFrame {
 			}
 		}
 
-
+		textEdited = false;
 
 	}
 
