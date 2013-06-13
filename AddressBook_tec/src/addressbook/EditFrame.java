@@ -26,10 +26,11 @@ public class EditFrame extends JFrame {
 
 	/** AddressBookから渡されたモデル */
 	private DefaultTableModel model;
-	/**  */
+
+	/** JLabelとJTextFieldを乗っけるパネル */
 	private JPanel mainPanel;
 
-	/** 表示してから内容が変更されたか */
+	/** TextField内容が変更されたか */
 	boolean textEdited = false;
 
 	public EditFrame(DefaultTableModel tmodel) {
@@ -68,11 +69,7 @@ public class EditFrame extends JFrame {
 		panel.add(btnDelete);
 
 		JButton btnExit = new JButton("終了(X)");
-		btnExit.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				setVisible(false);
-			}
-		});
+		btnExit.addActionListener(new ExitButtonAction());
 		panel.add(btnExit);
 
 		JScrollPane scrollPane = new JScrollPane();
@@ -93,18 +90,23 @@ public class EditFrame extends JFrame {
 		JPanel hogePanel = new JPanel();
 		hogePanel.setBorder(null);
 		getContentPane().add(hogePanel, BorderLayout.NORTH);
+		hogePanel.setLayout(new BorderLayout(0, 0));
+
+		JLabel lblMessage = new JLabel(" ");
+		hogePanel.add(lblMessage);
 
 		// ショートカットキー用のリスナーを追加
 		this.setFocusable(true);
 		this.addKeyListener(new ShortcutKey());
-		
+
 		// 初期化処理
 		init();
 
 	}
 
 // ActionListener ---------------------------------------------
-	
+
+	/** 「保存」ボタンのアクション */
 	class SaveButtonAction implements ActionListener {
 
 		@Override
@@ -112,10 +114,10 @@ public class EditFrame extends JFrame {
 
 			saveData();
 		}
-		
+
 	}
 
-	// 「戻る」ボタン
+	/** 「戻る」ボタンのアクション */
 	class PrevButtonAction implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -124,7 +126,7 @@ public class EditFrame extends JFrame {
 		}
 	}
 
-	// 「次へ」ボタン
+	/** 「次へ」ボタンのアクション */
 	class NextButtonAction implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -133,7 +135,7 @@ public class EditFrame extends JFrame {
 		}
 	}
 
-	// 「新規登録」ボタン
+	/** 「新規」ボタンのアクション */
 	class NewButtonAction implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -142,7 +144,7 @@ public class EditFrame extends JFrame {
 		}
 	}
 
-	// 「削除」ボタン
+	/** 「削除」ボタンのアクション */
 	class DeleteButtonAction implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -151,39 +153,49 @@ public class EditFrame extends JFrame {
 		}
 	}
 
+	/** 「終了」ボタンのアクション */
+	class ExitButtonAction implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+
+			exit();
+		}
+	}
+
 // KeyListener ---------------------------------------------
-	
+
 	/** ショートカットキー */
 	class ShortcutKey implements KeyListener {
 
 		@Override
 		public void keyPressed(KeyEvent e) {
-			
+
 			// Ctrlキーを押していないなら抜ける
 			if(!e.isControlDown()) {
 				return;
 			}
-		
+
+			// 各種ショートカットキー
 			switch (e.getKeyCode()) {
 			case KeyEvent.VK_S:
 				saveData();
 				break;
-				
+
 			case KeyEvent.VK_B:
 				prevData();
 				break;
-				
+
 			case KeyEvent.VK_N:
 				nextData();
 				break;
-				
+
 			case KeyEvent.VK_E:
 				newData();
 				break;
-				
+
 			case KeyEvent.VK_D:
 				deleteData();
-				
+
 			case KeyEvent.VK_X:
 				setVisible(false);
 
@@ -191,19 +203,21 @@ public class EditFrame extends JFrame {
 				break;
 			}
 		}
-	
+
 		@Override
 		public void keyReleased(KeyEvent e) {}
-	
+
 		@Override
 		public void keyTyped(KeyEvent e) {}
-		
+
 	}
 
+	/** テキストの編集を監視 */
 	class TextEditing implements KeyListener {
 
 		@Override
 		public void keyTyped(KeyEvent e) {
+			// テキストが編集された
 			textEdited = true;
 		}
 
@@ -283,7 +297,7 @@ public class EditFrame extends JFrame {
 
 		// 表示が完了したら現在のインデックスを更新
 		nowDataRow = showRow;
-		
+
 		textEdited = false;
 
 		return true;
@@ -305,9 +319,9 @@ public class EditFrame extends JFrame {
 
 		// 現在のインデックスを更新
 		nowDataRow = showRow;
-		
+
 		textEdited = false;
-		
+
 		return true;
 	}
 
@@ -323,11 +337,12 @@ public class EditFrame extends JFrame {
 		for (JTextField text : textFields) {
 			text.setEditable(true);
 		}
-		
+
 		textEdited = false;
 
 	}
 
+	/** 編集したデータをテーブルに反映させる */
 	private void saveData() {
 
 		// 編集したデータをテーブルに更新
@@ -335,8 +350,9 @@ public class EditFrame extends JFrame {
 			String text = textFields.get(i).getText();
 			model.setValueAt(text, nowDataRow, i);
 		}
-		
+
 		textEdited = false;
+		Dialogs.showInfoDialog("テーブルに反映しました", "");
 
 	}
 
@@ -349,7 +365,7 @@ public class EditFrame extends JFrame {
 		}
 
 		// 警告ダイアログ
-		int opt = Dialogs.showQuestionDialog("本当に削除しますか？", "");
+		int opt = Dialogs.showOkCancelDialog("本当に削除しますか？", "");
 		if(opt != Dialogs.OK_OPTION) {
 			// OK が選択されなければ何もしない
 			return;
@@ -376,10 +392,12 @@ public class EditFrame extends JFrame {
 
 	}
 
+	/** 次のデータを表示 */
 	private boolean prevData() {
 
 		if(textEdited && nowDataRow != 0) {
-			int opt = Dialogs.showQuestionDialog("編集中の内容を破棄してもよろしいですか？", "");
+			// テキストを編集中なら警告
+			int opt = Dialogs.showOkCancelDialog("編集中の内容を破棄してもよろしいですか？", "");
 			if(opt != Dialogs.OK_OPTION) {
 				return false;
 			}
@@ -388,10 +406,12 @@ public class EditFrame extends JFrame {
 
 	}
 
+	/** 前のデータを表示 */
 	private boolean nextData() {
 
 		if(textEdited && nowDataRow != model.getRowCount() - 1) {
-			int opt = Dialogs.showQuestionDialog("編集中の内容を破棄してもよろしいですか？", "");
+			// テキスト編集中なら警告
+			int opt = Dialogs.showOkCancelDialog("編集中の内容を破棄してもよろしいですか？", "");
 			if(opt != Dialogs.OK_OPTION) {
 				return false;
 			}
@@ -400,5 +420,16 @@ public class EditFrame extends JFrame {
 		return showData(nowDataRow + 1);
 	}
 
+	private void exit() {
 
+		if(textEdited) {
+			// テキストを編集中なら警告
+			int opt = Dialogs.showOkCancelDialog("編集中の内容を破棄してもよろしいですか？", "");
+			if(opt != Dialogs.OK_OPTION) {
+				return;
+			}
+		}
+		setVisible(false);
+
+	}
 }
